@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام التحقق الذكي 🇹🇷</title>
+    <!-- المكتبات اللازمة -->
+    <script src="https://unpkg.com"></script>
+    <script src="https://cloudflare.com"></script>
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --white: #ffffff;
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            --success: #2ecc71;
+            --error: #e74c3c;
+        }
+
+        body {
+            background: #f0f2f5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            direction: rtl;
+        }
+
+        /* علم تركيا في الزاوية */
+        .corner-flag {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background: #fff;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            z-index: 100;
+        }
+
+        .corner-flag img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 420px;
+            background: var(--white);
+            padding: 35px 25px;
+            border-radius: 25px;
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+
+        h2 {
+            color: #333;
+            margin-bottom: 25px;
+            font-weight: 600;
+        }
+
+        .section-label {
+            display: block;
+            text-align: right;
+            font-weight: bold;
+            color: #555;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px;
+            border-radius: 12px;
+            border: 1px solid #ddd;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border-radius: 12px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .btn-check {
+            background: var(--primary-gradient);
+            color: white;
+            margin-bottom: 15px;
+        }
+
+        .qr-section {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 15px;
+            border: 2px dashed #ddd;
+            margin-bottom: 20px;
+        }
+
+        .qr-btns {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .btn-qr {
+            background: #fff;
+            color: #555;
+            border: 1px solid #ddd;
+            font-size: 0.85rem;
+        }
+
+        #reader {
+            width: 100%;
+            border-radius: 12px;
+            margin-top: 10px;
+            display: none;
+            overflow: hidden;
+        }
+
+        #result-box {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 15px;
+            display: none;
+            background: #fcfcfc;
+            border: 1px solid #eee;
+            animation: slideUp 0.4s ease-out;
+        }
+
+        .profile-img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            border: 3px solid #667eea;
+            object-fit: cover;
+            margin-bottom: 10px;
+        }
+
+        .btn-add-modal {
+            background: none;
+            color: #667eea;
+            border: 2px solid #667eea;
+            margin-top: 15px;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 20px;
+            width: 85%;
+            max-width: 360px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="corner-flag">
+        <img src="https://flagcdn.com" alt="علم تركيا">
+    </div>
+
+    <div class="container">
+        <h2>نظام التحقق الذكي</h2>
+
+        <label class="section-label">رقم الهوية أو الجواز</label>
+        <input type="text" id="verifyId" placeholder="أدخل الرقم للتحقق اليدوي">
+        <button class="btn btn-check" onclick="searchUser(document.getElementById('verifyId').value)">تحقق
+            بالرقم</button>
+
+        <div class="qr-section">
+            <span class="qr-title" style="color:#666; font-size:0.85rem; font-weight:bold;">التحقق عبر كود QR
+                Code</span>
+            <div class="qr-btns">
+                <button class="btn btn-qr" onclick="startScanner()">📷 الكاميرا</button>
+                <button class="btn btn-qr" onclick="document.getElementById('fileInp').click()">📁 صورة</button>
+            </div>
+            <input type="file" id="fileInp" hidden accept="image/*" onchange="scanImage(this)">
+            <div id="reader"></div>
+        </div>
+
+        <div id="result-box"></div>
+
+        <button class="btn btn-add-modal" onclick="toggleModal(true)">➕ إضافة مستخدم جديد</button>
+    </div>
+
+    <!-- نافذة إضافة البيانات -->
+    <div id="addModal" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-top:0; color:#333">تخزين بيانات جديدة</h3>
+            <input type="text" id="newId" placeholder="رقم الهوية/الجواز">
+            <input type="text" id="newName" placeholder="الاسم الكامل">
+            <input type="text" id="newImg" placeholder="رابط الصورة (Google Drive)">
+
+            <button class="btn btn-check" onclick="saveAndProcess()">حفظ وتوليد QR</button>
+
+            <div id="qrGenArea" style="display:none; margin-top:15px; text-align:center;">
+                <div id="qrPreview" style="display:flex; justify-content:center; margin-bottom:10px;"></div>
+                <button class="btn" style="background:#2ecc71; color:white; margin-bottom:5px;" id="btnDownload">💾 حفظ
+                    في الكمبيوتر</button>
+                <button class="btn" style="background:#4285F4; color:white;" id="btnDrive">☁️ حفظ في Drive
+                    والشيت</button>
+            </div>
+
+            <button class="btn" style="background:#f0f0f0; color:#666; margin-top:10px;"
+                onclick="toggleModal(false)">إغلاق</button>
+        </div>
+    </div>
+
+    <script>
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyRitzJ5RNb3Qx9Pa9kO8QVnYvjo0toNqogHjRX_1YPVrOHB16BlhNo0WF188ErfMiC/exec";
+
+        // تحويل روابط درايف
+        function driveConverter(url) {
+            if (url && url.includes('://google.com')) {
+                let id = url.includes('id=') ? url.split('id=').pop().split('&')[0] : url.split('/d/')[1].split('/')[0];
+                return `https://googleusercontent.com{id}`;
+            }
+            return url;
+        }
+
+        // بحث وتحقق
+        async function searchUser(id) {
+            if (!id) return;
+            const resBox = document.getElementById('result-box');
+            resBox.style.display = 'block'; resBox.innerHTML = "جاري التحقق...";
+
+            try {
+                const res = await fetch(`${SCRIPT_URL}?id=${id}`);
+                const data = await res.json();
+                if (data.status === "found") {
+                    resBox.innerHTML = `
+                    <div style="color:var(--success); font-weight:bold; font-size:1.3rem; margin-bottom:10px;">Onaylandı ✅</div>
+                    <img src="${data.image}" class="profile-img"><br>
+                    <strong style="color:#333; font-size:1.2rem;">${data.name}</strong>
+                `;
+                } else {
+                    resBox.innerHTML = `<div style="color:var(--error); font-weight:bold;">Kayıt bulunamadى ❌</div>`;
+                }
+            } catch (e) { resBox.innerHTML = "خطأ في الاتصال"; }
+        }
+
+        // حفظ وتوليد QR مع الخيارات
+        async function saveAndProcess() {
+            const id = document.getElementById('newId').value;
+            const name = document.getElementById('newName').value;
+            const uImg = driveConverter(document.getElementById('newImg').value);
+
+            if (!id || !name) return alert("أكمل البيانات");
+
+            const qrDiv = document.getElementById('qrPreview');
+            qrDiv.innerHTML = "";
+            new QRCode(qrDiv, { text: id, width: 180, height: 180 });
+
+            setTimeout(() => {
+                const canvas = qrDiv.querySelector('canvas');
+                const base64 = canvas.toDataURL("image/png");
+                document.getElementById('qrGenArea').style.display = 'block';
+
+                // تحميل للكمبيوتر باسم المستخدم
+                document.getElementById('btnDownload').onclick = () => {
+                    const link = document.createElement('a');
+                    link.download = `${name}_QR.png`;
+                    link.href = base64; link.click();
+                };
+
+                // رفع للدرايف وحفظ في الشيت
+                document.getElementById('btnDrive').onclick = async () => {
+                    const btn = document.getElementById('btnDrive');
+                    btn.innerText = "جاري الحفظ...";
+                    const payload = { id, name, userImage: uImg, qrFile: base64 };
+
+                    await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
+                    alert("تم الحفظ في الدرايف والشيت بنجاح!");
+                    btn.innerText = "تم الحفظ بنجاح ✅";
+                };
+            }, 500);
+        }
+
+        // وظائف الكاميرا
+        function startScanner() {
+            document.getElementById('reader').style.display = 'block';
+            const scanner = new Html5Qrcode("reader");
+            scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (txt) => {
+                scanner.stop(); document.getElementById('reader').style.display = 'none';
+                searchUser(txt);
+            });
+        }
+
+        function scanImage(input) {
+            const scanner = new Html5Qrcode("reader");
+            scanner.scanFile(input.files[0], true).then(txt => searchUser(txt)).catch(e => alert("QR غير واضح"));
+        }
+
+        function toggleModal(show) { document.getElementById('addModal').style.display = show ? 'flex' : 'none'; }
+    </script>
+
+</body>
+
+</html>
